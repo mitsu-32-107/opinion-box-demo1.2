@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>意見箱 管理ダッシュボード（厚生部専用）</title>
+  <style>
+    :root { --admin-primary: #177E60; --bg-color: #f8fafc; --card-bg: #ffffff; --text-main: #1e293b; }
+    body { font-family: sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; }
+    .admin-header { background-color: var(--admin-primary); color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+    .admin-header h1 { margin: 0; font-size: 1.2rem; }
+    .container { max-width: 900px; margin: 20px auto; padding: 0 20px; }
+    
+    .dashboard-stats { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    .progress-bar-bg { background: #e2e8f0; height: 12px; border-radius: 10px; overflow: hidden; margin-top: 8px; }
+    .progress-bar-fill { background: #10b981; height: 100%; transition: width 0.3s; }
+    
+    .tabs { display: flex; border-bottom: 2px solid #e2e8f0; margin-bottom: 16px; overflow-x: auto; }
+    .tab { padding: 12px 16px; cursor: pointer; font-weight: bold; color: #64748b; white-space: nowrap; border-bottom: 3px solid transparent; font-size: 0.95rem;}
+    .tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+    .tab:hover { background: #f1f5f9; }
+
+    .filter-bar { display: flex; gap: 8px; margin-bottom: 20px; background: #f1f5f9; padding: 16px; border-radius: 8px; flex-wrap: wrap; align-items: center; border: 1px solid #e2e8f0;}
+    .filter-bar select { padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.9rem; }
+    .search-input { flex: 2; min-width: 150px; padding: 9px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.95rem; box-sizing: border-box; }
+    .result-count { font-size: 1rem; font-weight: bold; color: #3b82f6; background: #dbeafe; padding: 6px 16px; border-radius: 20px; margin-left: auto; white-space: nowrap; }
+    
+    .reset-btn { padding: 8px 12px; border: 1px solid #cbd5e1; background: #ffffff; border-radius: 6px; cursor: pointer; font-size: 0.85rem; color: #475569; font-weight: bold; white-space: nowrap; transition: 0.2s; }
+    .reset-btn:hover { background-color: #e2e8f0; color: #1e293b; }
+
+    .opinion-card { background-color: var(--card-bg); border-radius: 8px; padding: 20px; margin-bottom: 16px; border-left: 5px solid #3b82f6; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .tag { font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; font-weight: bold; display: inline-block; margin-right: 8px; margin-bottom: 8px; }
+    
+    .tag-target { background-color: #dbeafe; color: #1e40af; }
+    .tag-gakuyukai { background-color: #fee2e2; color: #991b1b; }
+    .tag-facility { background-color: #e0f2fe; color: #0369a1; }
+    .tag-class { background-color: #dcfce7; color: #166534; }
+    .tag-other { background-color: #f1f5f9; color: #475569; }
+
+    .tag-status { background-color: #fee2e2; color: #991b1b; }
+    .tag-status.waiting { background-color: #e0e7ff; color: #3730a3; }
+    .tag-status.ready { background-color: #fef08a; color: #854d0e; }
+    .tag-status.published { background-color: #d1fae5; color: #065f46; }
+    .tag-status.archive { background-color: #f1f5f9; color: #475569; }
+
+    .tag-reply-yes { background-color: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .tag-reply-no { background-color: #f8fafc; color: #475569; border: 1px solid #cbd5e1; }
+
+    .opinion-body { font-size: 1rem; line-height: 1.6; white-space: pre-wrap; margin: 12px 0 4px 0; padding: 12px; background-color: #f1f5f9; border-radius: 4px; }
+    .reply-box { background-color: #eff6ff; border: 1px solid #bfdbfe; padding: 12px; border-radius: 4px; margin-top: 12px; font-size: 0.95rem; }
+    .opinion-meta { font-size: 0.85rem; color: #64748b; margin-top: 12px; }
+    
+    .action-btn { background-color: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    .exec-btn { background-color: #8b5cf6; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; } 
+    .publish-btn { background-color: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+    .archive-btn { background-color: #64748b; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+    .unpublish-btn { background-color: #64748b; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
+    .reask-btn, .exec-reask-btn { color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+    .reask-btn { background-color: #ef4444; }
+    .exec-reask-btn { background-color: #c026d3; }
+    .cancel-btn { background-color: #64748b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85rem; } 
+    .edit-btn { background-color: transparent; color: #64748b; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+    .edit-btn:hover { background-color: #e2e8f0; }
+    
+    .history-box { margin-top: 16px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; }
+    .history-title { font-size: 0.95rem; color: #334155; margin-bottom: 8px; }
+    .history-list { list-style-type: none; padding-left: 0; margin: 0; }
+    .history-item { margin-bottom: 12px; font-size: 0.85rem; color: #475569; }
+    .history-time { font-weight: bold; color: #0f172a; margin-right: 8px; }
+    .history-detail { margin-top: 4px; padding-left: 8px; border-left: 2px solid #cbd5e1; white-space: pre-wrap; font-size: 0.85rem; color: #1e293b; background-color: #ffffff; padding: 8px; border-radius: 0 4px 4px 0;}
+  </style>
+</head>
+<body>
+  <header class="admin-header">
+    <h1>厚生部 管理ダッシュボード</h1>
+    <button onclick="clearData()" style="background:#ef4444; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">全データ消去</button>
+  </header>
+
+  <div class="container">
+    <div class="dashboard-stats">
+      <div style="display: flex; justify-content: space-between; align-items: baseline;">
+        <h2 id="progress-title" style="margin: 0; font-size: 1.2rem;">全体の対応完了率</h2>
+        <span id="progress-text" style="font-weight: bold; color: #10b981; font-size: 1.2rem;">0%</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div id="progress-bar" class="progress-bar-fill" style="width: 0%;"></div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="setTab('all')" id="tab-all">すべて表示</div>
+      <div class="tab" onclick="setTab('未処理（確認待ち）')" id="tab-未処理（確認待ち）">未処理</div>
+      <div class="tab" onclick="setTab('教職員回答待ち')" id="tab-教職員回答待ち">回答待ち（教職員）</div>
+      <div class="tab" onclick="setTab('回答済み（厚生部確認待ち）')" id="tab-回答済み（厚生部確認待ち）">最終確認</div>
+      <div class="tab" onclick="setTab('公開済み')" id="tab-公開済み">公開済み</div>
+      <div class="tab" onclick="setTab('アーカイブ済')" id="tab-アーカイブ済">アーカイブ済</div>
+    </div>
+
+    <div class="filter-bar">
+      <input type="text" id="admin-search" class="search-input" placeholder="キーワード検索..." oninput="renderAdminDashboard()">
+      
+      <span style="font-weight:bold; font-size:0.9rem;">絞り込み:</span>
+      <select id="filter-month" onchange="renderAdminDashboard()">
+        <option value="all">全期間</option>
+      </select>
+      <select id="sort-order" onchange="renderAdminDashboard()">
+        <option value="newest">新しい順</option>
+        <option value="oldest">古い順</option>
+      </select>
+      <select id="filter-target" onchange="renderAdminDashboard()">
+        <option value="all">すべての宛先</option>
+        <option value="大学（教職員宛）">大学（教職員宛）</option>
+        <option value="学友会執行委員会宛">学友会執行委員会宛</option>
+      </select>
+
+      <button type="button" class="reset-btn" onclick="resetAdminFilters()">↺ 条件をリセット</button>
+
+      <div id="admin-count-display" class="result-count">該当: 0件</div>
+    </div>
+
+    <div id="admin-list"></div>
+  </div>
+
+  <script>
+    let currentTab = 'all';
+
+    function setTab(tabName) {
+      currentTab = tabName;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('tab-' + tabName).classList.add('active');
+      renderAdminDashboard();
+    }
+
+    function resetAdminFilters() {
+      document.getElementById('admin-search').value = "";
+      document.getElementById('filter-month').value = "all";
+      document.getElementById('filter-target').value = "all";
+      document.getElementById('sort-order').value = "newest";
+      renderAdminDashboard();
+    }
+
+    function verifyAdminPin() {
+      const pin = prompt("【厚生部長 権限の確認】\n実行するには厚生部長のPINコード（4桁）を入力してください。\n（※デモ用PIN: 1234）");
+      if (pin === null) return false; 
+      if (pin === "1234") return true; 
+      alert("PINコードが正しくありません。");
+      return false; 
+    }
+
+    function verifyExecutivePin() {
+      const pin = prompt("【執行委員会 幹部権限の確認】\n実行するには幹部専用のPINコードを入力してください。\n（※デモ用PIN: 5678）");
+      if (pin === null) return false; 
+      if (pin === "5678") return true; 
+      alert("PINコードが正しくありません。");
+      return false; 
+    }
+
+    function addHistoryLog(op, action, detail = "") {
+      if (!op.history) op.history = [];
+      const now = new Date().toLocaleString('ja-JP');
+      op.history.push({ time: now, action: action, detail: detail });
+    }
+
+    function updateProgress(opinions, titlePrefix) {
+      document.getElementById('progress-title').innerText = titlePrefix + '対応完了率';
+      const total = opinions.length;
+      if (total === 0) {
+        document.getElementById('progress-bar').style.width = '0%';
+        document.getElementById('progress-text').innerText = 'データなし';
+        return;
+      }
+      const completed = opinions.filter(op => op.status === '公開済み' || op.status === 'アーカイブ済').length;
+      const rate = Math.round((completed / total) * 100);
+      document.getElementById('progress-bar').style.width = rate + '%';
+      document.getElementById('progress-text').innerText = rate + '% 完了';
+    }
+
+    function getCategoryTagClass(categoryName) {
+      if (!categoryName) return 'tag-other';
+      if (categoryName.includes('学友会活動') || categoryName.includes('学友会')) return 'tag-gakuyukai';
+      if (categoryName.includes('施設') || categoryName.includes('設備')) return 'tag-facility';
+      if (categoryName.includes('授業') || categoryName.includes('履修')) return 'tag-class';
+      return 'tag-other';
+    }
+
+    function renderAdminDashboard() {
+      const rawOpinions = JSON.parse(localStorage.getItem('appOpinionsData')) || [];
+      
+      const monthSelect = document.getElementById('filter-month');
+      const currentMonthVal = monthSelect.value;
+      
+      const months = new Set();
+      rawOpinions.forEach(op => {
+        const d = new Date(op.date); 
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        months.add(`${yyyy}-${mm}`);
+      });
+
+      const sortedMonths = Array.from(months).sort().reverse();
+      monthSelect.innerHTML = '<option value="all">全期間</option>';
+      sortedMonths.forEach(m => {
+        const [yyyy, mm] = m.split('-');
+        const option = document.createElement('option');
+        option.value = m; 
+        option.textContent = `${yyyy}年${parseInt(mm, 10)}月`; 
+        if (m === currentMonthVal) option.selected = true; 
+        monthSelect.appendChild(option);
+      });
+
+      let progressData = rawOpinions;
+      let titlePrefix = "全体の";
+
+      const filterMonth = document.getElementById('filter-month').value;
+      if (filterMonth !== 'all') {
+        const selectedOption = document.getElementById('filter-month').options[document.getElementById('filter-month').selectedIndex];
+        if(selectedOption) titlePrefix = selectedOption.text + "の";
+        
+        progressData = progressData.filter(op => {
+          const d = new Date(op.date); 
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          return `${yyyy}-${mm}` === filterMonth;
+        });
+      }
+
+      const filterTarget = document.getElementById('filter-target').value;
+      if (filterTarget !== 'all') {
+        progressData = progressData.filter(op => op.target === filterTarget);
+      }
+
+      updateProgress(progressData, titlePrefix);
+
+      let filtered = progressData;
+      if (currentTab !== 'all') {
+        filtered = filtered.filter(op => op.status === currentTab);
+      }
+
+      const searchKeyword = document.getElementById('admin-search').value.toLowerCase();
+      if (searchKeyword) {
+        filtered = filtered.filter(op => 
+          (op.content && op.content.toLowerCase().includes(searchKeyword)) ||
+          (op.replyText && op.replyText.toLowerCase().includes(searchKeyword)) ||
+          (op.target && op.target.toLowerCase().includes(searchKeyword)) ||
+          (op.category && op.category.toLowerCase().includes(searchKeyword)) ||
+          (op.name && op.name.toLowerCase().includes(searchKeyword))
+        );
+      }
+
+      const sortOrder = document.getElementById('sort-order').value;
+      if (sortOrder === 'newest') {
+        filtered.sort((a, b) => b.id - a.id);
+      } else {
+        filtered.sort((a, b) => a.id - b.id);
+      }
+
+      document.getElementById('admin-count-display').innerText = `該当: ${filtered.length}件`;
+
+      const listContainer = document.getElementById('admin-list');
+      listContainer.innerHTML = ""; 
+
+      if(filtered.length === 0) {
+        listContainer.innerHTML = `<p style="text-align:center; color:#64748b; margin-top:40px;">該当する意見はありません。</p>`;
+        return;
+      }
+
+      filtered.forEach(op => {
+        const card = document.createElement('div');
+        card.className = 'opinion-card';
+        
+        let statusClass = "tag-status";
+        if(op.status === "教職員回答待ち") statusClass += " waiting";
+        if(op.status === "回答済み（厚生部確認待ち）") statusClass += " ready";
+        if(op.status === "公開済み") statusClass += " published";
+        if(op.status === "アーカイブ済") statusClass += " archive";
+
+        let replyPrefBadge = "";
+        
+        if (op.content.match(/【(?:回答|返答)の希望：希望しない/)) {
+          replyPrefBadge = `<span class="tag tag-reply-no">📢 返答不要（共有のみ）</span>`;
+        } else if (op.content.match(/【(?:回答|返答)の希望：希望する/)) {
+          replyPrefBadge = `<span class="tag tag-reply-yes">✍️ 要返答</span>`;
+        }
+
+        let actionArea = "";
+        let replyArea = "";
+        let historyArea = "";
+        
+        if(op.replyText) {
+          let replyBg = op.status === "公開済み" ? "background:#d1fae5; border-color:#a7f3d0;" : "";
+          let replyTitle = op.status === "公開済み" ? "公開中の回答" : "【返ってきた回答内容】";
+          let timeHtml = op.replyDate ? `<div style="font-size: 0.8rem; color: #10b981; margin-bottom: 4px; font-weight: bold;">🕰 送信時刻: ${op.replyDate}</div>` : "";
+          
+          replyArea = `
+            <div id="reply-container-${op.id}">
+              <div class="reply-box" style="${replyBg}">
+                ${timeHtml}
+                <strong>${replyTitle}</strong><br>${op.replyText}
+                <div style="margin-top: 8px; text-align: right;">
+                  <button class="edit-btn" onclick="editText(${op.id}, 'reply')">✏️ 回答を微修正</button>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        if(op.status === "未処理（確認待ち）") {
+          let mainAction = (op.target && op.target.includes("学友会"))
+            ? `<div id="exec-action-${op.id}"><button class="exec-btn" onclick="openExecutiveEditor(${op.id})">幹部陣として直接回答（要PIN）</button></div>`
+            : `<button class="action-btn" onclick="escalateToStaff(${op.id})">教職員へ送信（要PIN）</button>`;
+          
+          actionArea = `
+            <div style="margin-top: 12px; display: flex; justify-content: flex-end; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <button class="archive-btn" onclick="archiveOpinion(${op.id})">非公開で完了とする</button>
+              ${mainAction}
+            </div>
+          `;
+        } else if(op.status === "教職員回答待ち") {
+          actionArea = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+              <p style="font-size:0.85rem; color:#64748b; font-weight:bold; margin: 0;">※現在、教職員の回答を待っています。</p>
+              <button class="cancel-btn" onclick="cancelEscalation(${op.id})">送信を取り消す</button>
+            </div>
+          `;
+        } else if(op.status === "回答済み（厚生部確認待ち）") {
+          let reaskButton = (op.target && op.target.includes("学友会"))
+            ? `<button class="exec-reask-btn" onclick="requestExecutiveReanswer(${op.id})">幹部へ差し戻す</button>`
+            : `<button class="reask-btn" onclick="requestReanswer(${op.id})">教職員へ差し戻す</button>`;
+          
+          actionArea = `
+            <div style="margin-top: 12px; display: flex; justify-content: flex-end; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <button class="archive-btn" onclick="archiveOpinion(${op.id})">公開せず完了とする</button>
+              ${reaskButton}
+              <button class="publish-btn" onclick="publishOpinion(${op.id})">特設ページに公開する</button>
+            </div>
+          `;
+        } else if(op.status === "公開済み") {
+          actionArea = `
+            <div style="margin-top: 12px; text-align: right;">
+              <button class="unpublish-btn" onclick="unpublishOpinion(${op.id})">非公開に戻す</button>
+            </div>
+          `;
+        } else if(op.status === "アーカイブ済") {
+          actionArea = `
+            <div style="margin-top: 12px; text-align: right;">
+              <button class="unpublish-btn" onclick="unarchiveOpinion(${op.id})">アーカイブを解除（未処理に戻す）</button>
+            </div>
+          `;
+        }
+
+        if(op.history && op.history.length > 0) {
+          let historyItems = op.history.map(h => {
+            let detailHtml = h.detail ? `<div class="history-detail">${h.detail}</div>` : "";
+            return `<li class="history-item"><span class="history-time">${h.time}</span> ${h.action}${detailHtml}</li>`;
+          }).join('');
+          historyArea = `
+            <div class="history-box">
+              <div class="history-title"><strong>📋 対応履歴</strong></div>
+              <ul class="history-list">${historyItems}</ul>
+            </div>
+          `;
+        }
+
+        const genderText = op.gender ? op.gender : "未回答";
+        let displayContent = op.content.replace(/【(?:回答|返答)の希望：.*?】\n\n/, '');
+        
+        let catTagClass = getCategoryTagClass(op.category); 
+        let targetTagClass = (op.target && op.target.includes('学友会')) ? 'tag-gakuyukai' : 'tag-target';
+
+        card.innerHTML = `
+          <div>
+            ${replyPrefBadge}
+            <span class="tag ${targetTagClass}">宛先: ${op.target}</span>
+            <span class="tag ${catTagClass}">${op.category}</span>
+            <span class="tag ${statusClass}">${op.status}</span>
+          </div>
+          
+          <div id="content-container-${op.id}">
+            <div class="opinion-body">${displayContent}</div>
+            <div style="text-align: right;">
+              <button class="edit-btn" onclick="editText(${op.id}, 'content')">✏️ 投稿内容を微修正</button>
+            </div>
+          </div>
+
+          <div class="opinion-meta">
+            <strong>投稿者:</strong> ${op.grade} / ${genderText} / ${op.name} (${op.email}) &nbsp;|&nbsp; <strong>投稿日:</strong> ${op.date}
+          </div>
+          ${historyArea}
+          <div style="margin-top: 16px;">
+            ${replyArea}
+            ${actionArea}
+          </div>
+        `;
+        listContainer.appendChild(card);
+      });
+    }
+
+    function editText(id, fieldType) {
+      if (!verifyAdminPin()) return;
+
+      const opinions = JSON.parse(localStorage.getItem('appOpinionsData')) || [];
+      const targetIndex = opinions.findIndex(op => op.id === id);
+      if(targetIndex === -1) return;
+
+      const currentText = fieldType === 'content' ? opinions[targetIndex].content : opinions[targetIndex].replyText;
+      const containerId = fieldType === 'content' ? `content-container-${id}` : `reply-container-${id}`;
+      const container = document.getElementById(containerId);
+
+      container.innerHTML = `
+        <div style="background: #fff; padding: 12px; border: 2px solid #3b82f6; border-radius: 4px; margin-top: 8px;">
+          <div style="margin-bottom: 8px; font-weight: bold; color: #1e40af;">✏️ テキスト編集モード</div>
+          <textarea id="edit-input-${id}-${fieldType}" style="width: 100%; height: 120px; padding: 8px; font-family: inherit; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box; resize: vertical;">${currentText}</textarea>
+          <div style="margin-top: 8px; text-align: right;">
+            <button onclick="renderAdminDashboard()" style="background: #94a3b8; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-right: 8px; font-weight: bold;">キャンセル</button>
+            <button onclick="saveText(${id}, '${fieldType}')" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">保存する</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function saveText(id, fieldType) {
+      const newText = document.getElementById(`edit-input-${id}-${fieldType}`).value;
+      if (!newText.trim()) {
+        alert("テキストが空です。");
+        return;
+      }
+
+      let opinions = JSON.parse(localStorage.getItem('appOpinionsData')) || [];
+      let targetIndex = opinions.findIndex(op => op.id === id);
+      if(targetIndex === -1) return;
+
+      if(fieldType === 'content') {
+        addHistoryLog(opinions[targetIndex], "学生の投稿内容を微修正", `【修正前】\n${opinions[targetIndex].content}`);
+        opinions[targetIndex].content = newText;
+      } else {
+        addHistoryLog(opinions[targetIndex], "回答内容を微修正", `【修正前】\n${opinions[targetIndex].replyText}`);
+        opinions[targetIndex].replyText = newText;
+      }
+      localStorage.setItem('appOpinionsData', JSON.stringify(opinions));
+      renderAdminDashboard(); 
+    }
+
+    function openExecutiveEditor(id) {
+      if (!verifyExecutivePin()) return;
+      const container = document.getElementById(`exec-action-${id}`);
+      container.innerHTML = `
+        <div style="background: #f3e8ff; padding: 12px; border-radius: 4px; border: 1px solid #d8b4fe; margin-top: 12px;">
+          <strong style="color: #6b21a8;">【幹部回答入力】</strong><br>
+          <textarea id="exec-input-${id}" style="width: 100%; height: 120px; padding: 8px; font-family: inherit; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box; resize: vertical;" placeholder="回答をここに入力..."></textarea>
+          <div style="margin-top: 8px; text-align: right;">
+            <button onclick="renderAdminDashboard()" style="background: #94a3b8; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-right: 8px; font-weight: bold;">キャンセル</button>
+            <button onclick="saveExecutiveAnswer(${id})" style="background: #8b5cf6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">回答を保存・公開準備へ</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function saveExecutiveAnswer(id) {
+      const reply = document.getElementById(`exec-input-${id}`).value;
+      if (!reply.trim()) return;
+      let opinions = JSON.parse(localStorage.getItem('appOpinionsData')) || [];
+      let targetIndex = opinions.findIndex(op => op.id === id);
+      if(targetIndex === -1) return;
+      
+      let op = opinions[targetIndex];
+      op.status = "回答済み（厚生部確認待ち）";
+      op.replyText = reply;
+      op.replyDate = new Date().toLocaleString('ja-JP'); 
+      addHistoryLog(op, "学友会幹部が回答を行いました");
+      
+      localStorage.setItem('appOpinionsData', JSON.stringify(opinions));
+      alert("幹部としての回答を保存しました。");
+      renderAdminDashboard();
+    }
+
+    function escalateToStaff(id) {
+      if (!verifyAdminPin()) return;
+      let opinions = JSON.parse(localStorage.getItem('appOpinionsData')) || [];
+      opinions = opinions.map(op => { 
+        if(op.id === id) {
+          op.status = "教職員回答待ち"; 
+          addHistoryLog(op, "教職員へ回答を依頼しました");
+        }
+        return op; 
+      });
+      localStorage.setItem('appOpinionsData', JSON.stringify(opinions));
+      alert("教職員のダッシュボードへ送信しました。");
+      renderAdminDashboard();
+    }
+
+    function cancelEscalation(id) {
+      if (!verifyAdminPin()) return;
+      if(!confirm("教職員への送信を取り消しますか？")) return;
+      let opinions = JSON.parse(localStorage.getItem('appOpinionsData')) || [];
+      opinions = opinions.map(op => { 
+        if(op.id === id) {
+          op.status = "未処理（確認待ち）"; 
+          addHistoryLog(op, "教職員への回答依頼を取り消しました");
+        }
+        return op; 
+      });
+      localStorage.setItem('appOpinionsData', JSON.stringify(opinions));
+      renderAdminDashboard();
+    }
+
+    function requestReanswer(id) {
+      if (!verifyAdminPin()) return;
+      let message = prompt("【お願いメッセージ】\n教職員へ差し戻す理由を入力してください：");
+      if (!message) return;
+      
+      let opinions = JSON.parse(localStorage.getItem('appOpinionsData')) || [];
+      opinions = opinions.map(op => { 
+        if(op.id === id) {
+          op.status = "教職員回答待ち"; 
+          addHistoryLog(op, "教職員へ差し戻し（再依頼）を実行", `【メッセージ】\n${message}`); 
+        }
+        return op; 
+      });
+      localStorage.setItem('appOpinionsData', JSON.stringify(opinions));
+      renderAdminDashboard();
+    }
+
+    function requestExecutiveReanswer(id) {
+      if (!verifyAdminPin()) return;
+      let message = prompt("【お願いメッセージ】\n幹部陣へ差し戻す理由を入力してください：");
+      if (!message) return;
+      
+      let opinions = JSON.parse(localStorage.getItem('appOpinionsData')) || [];
+      opinions = opinions.map(op => { 
+        if(op.id === id) {
+          op.status = "未処理（確認待ち）"; 
+          addHistoryLog(op, "幹部へ差し戻し（再依頼）を実行", `【メッセージ】\n${message}`); 
+        }
+        return op; 
+      });
+      localStorage.setItem('appOpinionsData', JSON.stringify(opinions));
+      renderAdminDashboard();
+    }
+
+    function publishOpinion(id) {
+      if (!verifyAdminPin()) return; 
+      let opinions = JSON.parse(localStorage.getItem('appOpinionsData')) || [];
+      opinions = opinions.map(op => { 
+        if(op.id === id) {
+          op.status = "公開済み"; 
+          op.publishDate = new Date().toLocaleDateString('ja-JP');
+          addHistoryLog(op, "学生向けページに公開しました");
+        }
+        return op; 
+      });
+      localStorage.setItem('appOpinionsData', JSON.stringify(opinions));
+      renderAdminDashboard();
+    }
+
+    function unpublishOpinion(id) {
+      if (!verifyAdminPin()) return; 
+      let opinions = JSON.parse(localStorage.getItem('appOpinionsData')) || [];
+      opinions = opinions.map(op => { 
+        if(op.id === id) {
+          op.status = "回答済み（厚生部確認待ち）"; 
+          addHistoryLog(op, "公開を取り消し、非公開に戻しました");
+        }
+        return op; 
+      });
+      localStorage.setItem('appOpinionsData', JSON.stringify(opinions));
+      renderAdminDashboard();
+    }
+
+    function archiveOpinion(id) {
+      if (!verifyAdminPin()) return;
+      let reason = prompt("【アーカイブ処理】\n理由を入力してください：");
+      if (!reason) return;
+
+      let opinions = JSON.parse(localStorage.getItem('appOpinionsData')) || [];
+      opinions = opinions.map(op => {
+        if(op.id === id) {
+          op.status = "アーカイブ済";
+          addHistoryLog(op, "非公開のまま対応完了（アーカイブ）としました", `【理由】\n${reason}`);
+        }
+        return op;
+      });
+      localStorage.setItem('appOpinionsData', JSON.stringify(opinions));
+      renderAdminDashboard();
+    }
+
+    function unarchiveOpinion(id) {
+      if (!verifyAdminPin()) return;
+      let opinions = JSON.parse(localStorage.getItem('appOpinionsData')) || [];
+      opinions = opinions.map(op => {
+        if(op.id === id) {
+          op.status = "未処理（確認待ち）";
+          addHistoryLog(op, "アーカイブを解除し、未処理に戻しました");
+        }
+        return op;
+      });
+      localStorage.setItem('appOpinionsData', JSON.stringify(opinions));
+      renderAdminDashboard();
+    }
+
+    function clearData() {
+      if (!verifyAdminPin()) return; 
+      if(confirm("全消去しますか？")) {
+        localStorage.removeItem('appOpinionsData');
+        renderAdminDashboard(); 
+      }
+    }
+
+    renderAdminDashboard();
+  </script>
+</body>
+</html>
