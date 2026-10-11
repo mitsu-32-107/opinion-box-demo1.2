@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>学友会 意見箱システム（デモ公開用）</title>
+  <style>
+    :root { 
+      --student: #0068B7; 
+      --admin: #177E60; 
+      --staff: #363C70;
+      --bg: #f8fafc;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: #1e293b;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 500px;
+      width: 90%;
+      background: #ffffff;
+      padding: 30px 20px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+      text-align: center;
+      margin: 20px 0;
+    }
+    h1 {
+      font-size: 1.4rem;
+      color: #0f172a;
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+    p.desc {
+      font-size: 0.9rem;
+      color: #64748b;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    /* ★ 安心して触ってもらうための案内用スタイル */
+    .safe-notice {
+      background-color: #fefce8;
+      border: 1px solid #fef08a;
+      border-left: 4px solid #eab308;
+      padding: 14px 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: left;
+      font-size: 0.85rem;
+      color: #854d0e;
+      line-height: 1.5;
+    }
+    .safe-notice strong {
+      color: #a16207;
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.95rem;
+    }
+    
+    .setup-banner {
+      background-color: #f0f9ff;
+      border: 2px solid #bae6fd;
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      text-align: left;
+    }
+    .setup-banner strong {
+      color: #0369a1;
+      display: block;
+      margin-bottom: 6px;
+      font-size: 1rem;
+    }
+    .setup-banner p {
+      font-size: 0.85rem;
+      color: #334155;
+      margin: 0 0 12px 0;
+      line-height: 1.4;
+    }
+    .data-btn {
+      flex: 1; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.9rem; color: white; transition: 0.2s;
+    }
+    .data-btn:hover { filter: brightness(0.9); transform: translateY(-1px); }
+    .btn-set { background-color: var(--student); }
+    .btn-reset { background-color: #ef4444; }
+
+    .link-card {
+      display: block;
+      text-decoration: none;
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      color: white;
+      font-weight: bold;
+      font-size: 1.1rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .link-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .link-card span {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: normal;
+      margin-top: 4px;
+      opacity: 0.9;
+    }
+
+    .btn-student { background-color: var(--student); }
+    .btn-admin { background-color: var(--admin); }
+    .btn-staff { background-color: var(--staff); }
+
+    .demo-info {
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 8px;
+      text-align: left;
+      font-size: 0.85rem;
+      color: #475569;
+    }
+    .demo-info strong {
+      color: #334155;
+    }
+    .demo-info ul {
+      margin: 8px 0 0;
+      padding-left: 20px;
+    }
+    .demo-info li {
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>意見箱システム デモポータル</h1>
+    <p class="desc">
+      本日はご覧いただきありがとうございます。<br>
+      以下のボタンから、各権限のデモ画面を自由に体験できます。
+    </p>
+
+    <!-- ★ 非IT層向けの安心メッセージをさらに短く変更 -->
+    <div class="safe-notice">
+      <strong>💡 自由にいじってOK！（壊れる心配はありません）</strong>
+      このデモは端末内だけで動いており、外部へのデータ送信は一切ありません。<br>
+      適当な入力やデータの削除をしても全く問題ないので、安心してお試しください。
+    </div>
+
+    <div class="setup-banner">
+      <strong>【オプション】デモデータをセットアップ</strong>
+      <p>デモデータをセットすると、実際の運用時に近い雰囲気でシステムを体験できます。<br>
+      初期状態のUI・デザインを確認したい方や、ご自身でゼロから意見を入力してみたい方は、データをセットせずにそのまま各ポータルへお進みください！</p>
+      <div style="display: flex; gap: 8px;">
+        <button class="data-btn btn-set" onclick="setDemoData()">📥 デモデータをセット</button>
+        <button class="data-btn btn-reset" onclick="resetDemoData()">🗑 リセット</button>
+      </div>
+    </div>
+
+    <a href="index.html" class="link-card btn-student">
+      👤 学生用ポータル
+      <span>意見の投稿・公開された回答の閲覧</span>
+    </a>
+
+    <a href="admin.html" class="link-card btn-admin">
+      🛡 厚生部 管理ダッシュボード
+      <span>全意見の集約・ステータス管理・公開設定</span>
+    </a>
+
+    <a href="staff.html" class="link-card btn-staff">
+      🏢 教職員用 回答ダッシュボード
+      <span>大学側へ割り振られた意見への回答作成</span>
+    </a>
+
+    <div class="demo-info">
+      <strong>🔒 管理画面用 PINコード</strong>
+      <ul>
+        <li>厚生部長 権限PIN： <strong>1234</strong></li>
+        <li>執行委員会幹部 権限PIN： <strong>5678</strong></li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    function setDemoData() {
+      if(localStorage.getItem('appOpinionsData')) {
+        if(!confirm("既にデータが存在します。上書きして最新のデモデータをセットしますか？")) return;
+      }
+      
+      const now = Date.now();
+      const demoData = [
+        {
+          id: now,
+          date: "2026/08/25", publishDate: "", target: "大学（教職員宛）", category: "施設・設備について",
+          content: "【返答の希望：希望する】\n\nPCを使った課題や資格勉強（FE・APなど）のために図書館やラーニングコモンズをよく利用するのですが、ピークタイムになるとWi-Fiが極端に遅くなったり、コンセント付きの座席がすべて埋まっていて充電できないことが頻繁にあります。可能であれば、窓側の席にも電源タップを増設していただくか、モバイルバッテリーの貸し出しサービスなどを検討していただけないでしょうか。長時間の自習環境の改善をお願いいたします。",
+          grade: "学部生", gender: "男性", name: "情報系2年", email: "exam-study@example.com", status: "教職員回答待ち", replyText: "",
+          history: [
+            { time: "2026/08/25 10:15:00", action: "学生から意見が投稿されました", detail: "" },
+            { time: "2026/08/25 11:30:00", action: "教職員へ回答を依頼しました", detail: "" }
+          ]
+        },
+        {
+          id: now - 100000,
+          date: "2026/08/24", publishDate: "", target: "学友会執行委員会宛", category: "学友会活動について",
+          content: "【返答の希望：希望する】\n\n今年の津田沼祭について質問です。屋外ステージのタイムテーブルや出店マップは、いつ頃Webで公開される予定ですか？事前にサークルの友達と計画を立てたいので、早めに情報を出してもらえると嬉しいです。",
+          grade: "学部生", gender: "女性", name: "匿名", email: "なし", status: "回答済み（厚生部確認待ち）",
+          replyText: "お問い合わせありがとうございます！津田沼祭の特設サイトおよびタイムテーブルは、開催の約1ヶ月前（10月下旬頃）に公開を予定しております。公式SNSでも随時情報を発信していきますので、もう少々お待ちください。",
+          replyDate: "2026/08/26 09:30:00",
+          history: [
+            { time: "2026/08/24 14:20:00", action: "学生から意見が投稿されました", detail: "" },
+            { time: "2026/08/26 09:30:00", action: "学友会幹部が回答を行いました", detail: "" }
+          ]
+        },
+        {
+          id: now - 200000,
+          date: "2026/08/20", publishDate: "2026/08/22", target: "大学（教職員宛）", category: "施設・設備について",
+          content: "【返答の希望：希望する】\n\n2号館1階の自動販売機を、電子マネー対応の新しい機種に変えてほしいです。",
+          grade: "学部生", gender: "未回答", name: "匿名", email: "なし", status: "公開済み",
+          replyText: "ご要望ありがとうございます。管財課にて業者と調整を行い、後期授業開始に合わせてキャッシュレス決済対応の自動販売機へ入れ替えることが決定いたしました。",
+          history: [
+            { time: "2026/08/20 11:10:00", action: "学生から意見が投稿されました", detail: "" },
+            { time: "2026/08/20 15:00:00", action: "教職員へ回答を依頼しました", detail: "" },
+            { time: "2026/08/21 16:30:00", action: "教職員が回答を送信しました", detail: "" },
+            { time: "2026/08/22 10:00:00", action: "学生向けページに公開しました", detail: "" }
+          ]
+        },
+        {
+          id: now - 300000,
+          date: "2026/08/26", publishDate: "", target: "学友会執行委員会宛", category: "学友会活動について",
+          content: "【返答の希望：希望する】\n\n学友会室で貸し出しているイベント用の備品（台車やマイク、スピーカーなど）のリストを、事前にWeb等で確認できるようにしてほしいです。",
+          grade: "学部生", gender: "未回答", name: "匿名", email: "なし", status: "未処理（確認待ち）", replyText: "",
+          history: [{ time: "2026/08/26 08:45:00", action: "学生から意見が投稿されました", detail: "" }]
+        },
+        {
+          id: now - 400000,
+          date: "2026/07/20", publishDate: "", target: "学友会執行委員会宛", category: "その他",
+          content: "【返答の希望：希望しない（共有のみ）】\n\n先日のイベントでは、運営スタッフの皆さんが暑い中で列の誘導を頑張ってくれたおかげでスムーズに参加できました。これからも応援しています！",
+          grade: "学部生", gender: "女性", name: "匿名", email: "なし", status: "アーカイブ済", replyText: "",
+          history: [
+            { time: "2026/07/20 16:20:00", action: "学生から意見が投稿されました", detail: "" },
+            { time: "2026/07/21 13:00:00", action: "非公開のまま対応完了（アーカイブ）としました", detail: "【理由】\n返答不要の応援メッセージのため。運営スタッフ内で共有し、今後の活動の励みとさせていただきます！" }
+          ]
+        },
+        {
+          id: now - 500000,
+          date: "2026/07/10", publishDate: "2026/07/15", target: "大学（教職員宛）", category: "授業・履修について",
+          content: "【返答の希望：希望する】\n\n3号館の201教室ですが、後方の席に座るとプロジェクターの画面が少し見えづらいです。可能であればスクリーンを少し大きいものに変更できませんか？",
+          grade: "学部生", gender: "男性", name: "匿名", email: "なし", status: "公開済み",
+          replyText: "ご意見ありがとうございます。施設課にて該当教室を確認したところ、経年劣化により画面が暗くなっていることが確認できました。夏休み期間中にプロジェクター機器自体の入れ替え工事を実施いたします。",
+          history: [
+            { time: "2026/07/10 09:00:00", action: "学生から意見が投稿されました", detail: "" },
+            { time: "2026/07/11 10:30:00", action: "教職員へ回答を依頼しました", detail: "" },
+            { time: "2026/07/14 15:45:00", action: "教職員が回答を送信しました", detail: "" },
+            { time: "2026/07/15 10:00:00", action: "学生向けページに公開しました", detail: "" }
+          ]
+        },
+        {
+          id: now - 600000,
+          date: "2026/08/01", publishDate: "2026/08/05", target: "大学（教職員宛）", category: "その他",
+          content: "【返答の希望：希望する】\n\n学食のメニューに、カロリー表示やアレルギー表示をもっと分かりやすく記載してほしいです。また、健康志向のメニューが少し増えると嬉しいです。",
+          grade: "学部生", gender: "女性", name: "匿名", email: "なし", status: "公開済み",
+          replyText: "貴重なご意見ありがとうございます。食堂運営委託業者と協議した結果、来学期より券売機のメニューおよび各テーブルのPOPにて、アレルギー表示のアイコンを明確化することとなりました。また、月替わりでヘルシーメニューの提供も開始いたします。",
+          history: [
+            { time: "2026/08/01 12:30:00", action: "学生から意見が投稿されました", detail: "" },
+            { time: "2026/08/02 09:00:00", action: "教職員へ回答を依頼しました", detail: "" },
+            { time: "2026/08/04 16:00:00", action: "教職員が回答を送信しました", detail: "" },
+            { time: "2026/08/05 09:30:00", action: "学生向けページに公開しました", detail: "" }
+          ]
+        },
+        {
+          id: now - 700000,
+          date: "2026/08/24", publishDate: "", target: "大学（教職員宛）", category: "施設・設備について",
+          content: "【返答の希望：希望する】\n\n4号館3階の男子トイレの個室（一番奥）の鍵が閉まりにくくなっています。修理をお願いします。",
+          grade: "学部生", gender: "男性", name: "匿名", email: "なし", status: "教職員回答待ち", replyText: "",
+          history: [
+            { time: "2026/08/24 10:15:00", action: "学生から意見が投稿されました", detail: "" },
+            { time: "2026/08/24 11:30:00", action: "教職員へ回答を依頼しました", detail: "" }
+          ]
+        },
+        {
+          id: now - 800000,
+          date: "2026/06/15", publishDate: "2026/06/18", target: "学友会執行委員会宛", category: "学友会活動について",
+          content: "【返答の希望：希望する】\n\nサークル活動で使用する会議室の予約システムについてですが、現状は紙での申請になっており手間がかかります。Webから空き状況を確認して仮予約できるようにしてほしいです。",
+          grade: "学部生", gender: "未回答", name: "匿名", email: "なし", status: "公開済み",
+          replyText: "ご要望ありがとうございます。会議室の予約フローについては委員会内でも課題として認識しております。現在、大学のシステム担当部署と連携し、後期からのWeb予約システム導入に向けて協議を進めています。進捗があり次第、改めて全体に告知いたします。",
+          history: [
+            { time: "2026/06/15 09:00:00", action: "学生から意見が投稿されました", detail: "" },
+            { time: "2026/06/16 11:00:00", action: "学友会幹部が回答を行いました", detail: "" },
+            { time: "2026/06/18 10:00:00", action: "学生向けページに公開しました", detail: "" }
+          ]
+        },
+        {
+          id: now - 900000,
+          date: "2026/08/15", publishDate: "", target: "大学（教職員宛）", category: "授業・履修について",
+          content: "【返答の希望：希望する】\n\nシラバスに記載されている成績評価の基準について、平常点の割合が具体的に何を指すのか（出席点なのか、小テストなのか）をもう少し明確にしてほしいです。",
+          grade: "学部生", gender: "未回答", name: "匿名", email: "なし", status: "回答済み（厚生部確認待ち）",
+          replyText: "ご指摘ありがとうございます。教務課にて確認したところ、一部の科目で記載が曖昧な箇所がございました。来年度のシラバス作成時には、全教員に対し平常点の内訳を明確化するようガイドラインを修正いたします。",
+          replyDate: "2026/08/18 14:00:00",
+          history: [
+            { time: "2026/08/15 13:45:00", action: "学生から意見が投稿されました", detail: "" },
+            { time: "2026/08/16 10:00:00", action: "教職員へ回答を依頼しました", detail: "" },
+            { time: "2026/08/18 14:00:00", action: "教職員が回答を送信しました", detail: "" }
+          ]
+        },
+        {
+          id: now - 1000000,
+          date: "2026/08/05", publishDate: "", target: "大学（教職員宛）", category: "その他",
+          content: "【返答の希望：希望しない（共有のみ）】\n\n先日落とした学生証が、学生課の窓口に届けられていて無事に手元に戻りました。親切に対応してくださった職員の方、本当にありがとうございました。",
+          grade: "学部生", gender: "男性", name: "匿名", email: "なし", status: "アーカイブ済", replyText: "",
+          history: [
+            { time: "2026/08/05 16:30:00", action: "学生から意見が投稿されました", detail: "" },
+            { time: "2026/08/06 12:00:00", action: "非公開のまま対応完了（アーカイブ）としました", detail: "【理由】\n返答不要のお礼メッセージのため。学生課窓口に申し送りし、完了とします。" }
+          ]
+        },
+        {
+          id: now - 1100000,
+          date: "2026/06/20", publishDate: "2026/06/23", target: "学友会執行委員会宛", category: "施設・設備について",
+          content: "【返答の希望：希望する】\n\n学生ホールの机と椅子が昼休みになると全く足りません。少し増やせないでしょうか？",
+          grade: "学部生", gender: "女性", name: "匿名", email: "なし", status: "公開済み",
+          replyText: "ご意見ありがとうございます！当会でも昼休みの混雑状況は把握しており、現在、倉庫で余剰となっている長机と丸椅子を学生ホールに移動させる手続きを進めています。来週中には利用可能になる予定です。",
+          history: [
+            { time: "2026/06/20 12:15:00", action: "学生から意見が投稿されました", detail: "" },
+            { time: "2026/06/21 17:00:00", action: "学友会幹部が回答を行いました", detail: "" },
+            { time: "2026/06/23 10:30:00", action: "学生向けページに公開しました", detail: "" }
+          ]
+        }
+      ];
+      localStorage.setItem('appOpinionsData', JSON.stringify(demoData));
+      alert("✅ 動作確認用データ（全12件）をセットしました！\n実際のシステム運用に近い雰囲気をお楽しみください。");
+    }
+
+    function resetDemoData() {
+      if(confirm("システム内のすべてのデータをリセットしますか？\n※ご自身で投稿したテスト意見なども消去されます。")) {
+        localStorage.removeItem('appOpinionsData');
+        alert("🗑 データをリセットしました。\n初期状態のUI・デザインの確認や、ゼロからのデータ入力をお試しください。");
+      }
+    }
+  </script>
+</body>
+</html>
