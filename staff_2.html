@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>教職員用 回答ダッシュボード</title>
+  <style>
+    :root { --staff-primary: #363C70; --bg-color: #f8fafc; --card-bg: #ffffff; --text-main: #1e293b; }
+    body { font-family: sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; }
+    .staff-header { background-color: var(--staff-primary); color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+    .staff-header h1 { margin: 0; font-size: 1.2rem; }
+    .container { max-width: 800px; margin: 20px auto; padding: 0 20px; }
+    
+    .tabs { display: flex; border-bottom: 2px solid #e2e8f0; margin-bottom: 24px; overflow-x: auto; }
+    .tab { flex: 1; text-align: center; padding: 12px 8px; cursor: pointer; font-weight: bold; color: #64748b; border-bottom: 3px solid transparent; transition: all 0.2s; white-space: nowrap; font-size: 0.95rem; }
+    .tab.active { color: #047857; border-bottom-color: #047857; background-color: #ecfdf5; }
+    .tab:hover:not(.active) { background-color: #f1f5f9; }
+
+    .filter-bar { display: flex; gap: 8px; margin-bottom: 20px; background: #f1f5f9; padding: 16px; border-radius: 8px; flex-wrap: wrap; align-items: center; border: 1px solid #e2e8f0;}
+    .filter-bar select { padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.9rem; }
+    .search-input { flex: 2; min-width: 150px; padding: 9px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.95rem; box-sizing: border-box; }
+    .result-count { font-size: 1rem; font-weight: bold; color: #047857; background: #d1fae5; padding: 6px 16px; border-radius: 20px; margin-left: auto; white-space: nowrap; }
+    
+    .reset-btn { padding: 8px 12px; border: 1px solid #cbd5e1; background: #ffffff; border-radius: 6px; cursor: pointer; font-size: 0.85rem; color: #475569; font-weight: bold; white-space: nowrap; transition: 0.2s; }
+    .reset-btn:hover { background-color: #e2e8f0; color: #1e293b; }
+
+    .opinion-card { background-color: var(--card-bg); border-radius: 8px; padding: 20px; margin-bottom: 16px; border-left: 5px solid #10b981; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .tag { font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; font-weight: bold; display: inline-block; margin-right: 8px; margin-bottom: 8px; }
+    
+    .tag-target { background-color: #dbeafe; color: #1e40af; }
+    .tag-gakuyukai { background-color: #fee2e2; color: #991b1b; }
+    .tag-facility { background-color: #e0f2fe; color: #0369a1; }
+    .tag-class { background-color: #dcfce7; color: #166534; }
+    .tag-other { background-color: #f1f5f9; color: #475569; }
+
+    .tag-status { background-color: #fee2e2; color: #991b1b; }
+    .tag-status.waiting { background-color: #e0e7ff; color: #3730a3; }
+    .tag-status.ready { background-color: #fef08a; color: #854d0e; }
+    .tag-status.published { background-color: #d1fae5; color: #065f46; }
+
+    .tag-reply-yes { background-color: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .tag-reply-no { background-color: #f8fafc; color: #475569; border: 1px solid #cbd5e1; }
+
+    .opinion-body { font-size: 1rem; line-height: 1.6; white-space: pre-wrap; margin: 12px 0; padding: 12px; background-color: #f1f5f9; border-radius: 4px; border-left: 3px solid #cbd5e1;}
+    .reply-box { background-color: #eff6ff; border: 1px solid #bfdbfe; padding: 12px; border-radius: 4px; margin-top: 12px; font-size: 0.95rem; }
+    .action-btn { background-color: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1rem; }
+    .cancel-btn { background-color: #64748b; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.9rem; }
+    .alert-btn { background-color: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.9rem; }
+    textarea { width: 100%; height: 120px; padding: 10px; font-family: inherit; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box; resize: vertical; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <header class="staff-header">
+    <h1>教職員用 回答ダッシュボード</h1>
+    <div style="font-size: 0.85rem; background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 4px;">関係者外秘</div>
+  </header>
+
+  <div class="container">
+    <div class="tabs">
+      <div class="tab active" id="tab-todo" onclick="setStaffTab('todo')">未対応（要回答）</div>
+      <div class="tab" id="tab-sent" onclick="setStaffTab('sent')">送信済み（確認待ち）</div>
+      <div class="tab" id="tab-published" onclick="setStaffTab('published')">公開中</div>
+    </div>
+
+    <div class="filter-bar">
+      <input type="text" id="staff-search" class="search-input" placeholder="キーワード検索..." oninput="renderStaffDashboard()">
+      
+      <span style="font-weight:bold; font-size:0.9rem;">絞り込み:</span>
+      <select id="filter-month" onchange="renderStaffDashboard()">
+        <option value="all">全期間</option>
+      </select>
+      <select id="sort-order" onchange="renderStaffDashboard()">
+        <option value="newest">新しい順</option>
+        <option value="oldest">古い順</option>
+      </select>
+
+      <button type="button" class="reset-btn" onclick="resetStaffFilters()">↺ 条件をリセット</button>
+
+      <div id="staff-count-display" class="result-count">該当: 0件</div>
+    </div>
+
+    <div id="staff-list"></div>
+  </div>
+
+<script>
+    // =========================================================================
+    // 1. 設定（GASのURL）
+    // =========================================================================
+    // ★ここに、index_2.html や admin_2.html と同じGASのURLを貼り付けてください
+    const endpoint = "https://script.google.com/macros/s/AKfycbyUhCh2RZ3tlUOPk--2xFuzl29eWO0reU8XR9da4vnfy1RK3IfnyrhnzthF3DPmVqS1VQ/exec";
+    
+    let globalOpinions = []; // 読み込んだデータを一時保存する変数
+    let currentStaffTab = 'todo'; 
+
+    // =========================================================================
+    // 2. UI・フィルター制御
+    // =========================================================================
+    function setStaffTab(tabName) {
+      currentStaffTab = tabName;
+      document.getElementById('tab-todo').classList.remove('active');
+      document.getElementById('tab-sent').classList.remove('active');
+      document.getElementById('tab-published').classList.remove('active');
+      
+      document.getElementById('tab-' + tabName).classList.add('active');
+      renderStaffDashboard();
+    }
+
+    function resetStaffFilters() {
+      document.getElementById('staff-search').value = "";
+      document.getElementById('filter-month').value = "all";
+      document.getElementById('sort-order').value = "newest";
+      renderStaffDashboard();
+    }
+
+    function getCategoryTagClass(categoryName) {
+      if (!categoryName) return 'tag-other';
+      if (categoryName.includes('学友会活動') || categoryName.includes('学友会')) return 'tag-gakuyukai';
+      if (categoryName.includes('施設') || categoryName.includes('設備')) return 'tag-facility';
+      if (categoryName.includes('授業') || categoryName.includes('履修')) return 'tag-class';
+      return 'tag-other';
+    }
+
+    // =========================================================================
+    // 3. スプレッドシートからのデータ読み込み（GET）と表示
+    // =========================================================================
+    
+    // ★スプレッドシートからデータを取得する関数
+    function fetchOpinionsAndRender() {
+      const listContainer = document.getElementById('staff-list');
+      listContainer.innerHTML = `<p style="text-align:center; color:#10b981; margin-top:40px;">⏳ スプレッドシートからデータを読み込み中...</p>`;
+      
+      fetch(endpoint)
+        .then(response => response.json())
+        .then(data => {
+          globalOpinions = data;
+          renderStaffDashboard();
+        })
+        .catch(error => {
+          listContainer.innerHTML = `<p style="text-align:center; color:#ef4444; margin-top:40px;">データの読み込みに失敗しました。</p>`;
+          console.error('Error fetching data:', error);
+        });
+    }
+
+    // 画面にカードを描画する関数
+    function renderStaffDashboard() {
+      const opinions = globalOpinions; // localStorageではなく変数から読み込む
+      const listContainer = document.getElementById('staff-list');
+      listContainer.innerHTML = ""; 
+
+      // 教職員画面には、「未処理」の意見や「学友会宛」の意見は表示しない
+      let baseStaffOpinions = opinions.filter(op => 
+        op.status !== "未処理（確認待ち）" && 
+        !(op.target && op.target.includes("学友会"))
+      );
+
+      const monthSelect = document.getElementById('filter-month');
+      const currentMonthVal = monthSelect.value;
+      const months = new Set();
+      baseStaffOpinions.forEach(op => {
+        if(!op.date) return;
+        const d = new Date(op.date);
+        if(isNaN(d.getTime())) return;
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        months.add(`${yyyy}-${mm}`);
+      });
+      const sortedMonths = Array.from(months).sort().reverse();
+      monthSelect.innerHTML = '<option value="all">全期間</option>';
+      sortedMonths.forEach(m => {
+        const [yyyy, mm] = m.split('-');
+        const option = document.createElement('option');
+        option.value = m; 
+        option.textContent = `${yyyy}年${parseInt(mm, 10)}月`; 
+        if (m === currentMonthVal) option.selected = true; 
+        monthSelect.appendChild(option);
+      });
+
+      let staffOpinions = baseStaffOpinions;
+
+      const filterMonth = document.getElementById('filter-month').value;
+      if (filterMonth !== 'all') {
+        staffOpinions = staffOpinions.filter(op => {
+          if(!op.date) return false;
+          const d = new Date(op.date);
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          return `${yyyy}-${mm}` === filterMonth;
+        });
+      }
+
+      if (currentStaffTab === 'todo') {
+        staffOpinions = staffOpinions.filter(op => op.status === "教職員回答待ち");
+      } else if (currentStaffTab === 'sent') {
+        staffOpinions = staffOpinions.filter(op => op.status === "回答済み（厚生部確認待ち）");
+      } else if (currentStaffTab === 'published') {
+        staffOpinions = staffOpinions.filter(op => op.status === "公開済み");
+      }
+
+      const searchKeyword = document.getElementById('staff-search').value.toLowerCase();
+      if (searchKeyword) {
+        staffOpinions = staffOpinions.filter(op => 
+          ((op.content || "").toLowerCase().includes(searchKeyword)) ||
+          ((op.replyText || "").toLowerCase().includes(searchKeyword)) ||
+          ((op.category || "").toLowerCase().includes(searchKeyword)) ||
+          ((op.name || "").toLowerCase().includes(searchKeyword))
+        );
+      }
+
+      const sortOrder = document.getElementById('sort-order').value;
+      if (sortOrder === 'newest') {
+        staffOpinions.sort((a, b) => b.id - a.id);
+      } else {
+        staffOpinions.sort((a, b) => a.id - b.id);
+      }
+
+      document.getElementById('staff-count-display').innerText = `該当: ${staffOpinions.length}件`;
+
+      if(staffOpinions.length === 0) {
+        let emptyMsg = searchKeyword || filterMonth !== 'all' ? "該当する意見が見つかりませんでした。" :
+                       currentStaffTab === 'todo' ? "現在、未対応の回答依頼はありません。" :
+                       currentStaffTab === 'sent' ? "現在、厚生部の確認待ちとなっている回答はありません。" :
+                       "現在、公開されている回答はありません。";
+        listContainer.innerHTML = `<p style="text-align:center; color:#64748b; padding: 40px 0;">${emptyMsg}</p>`;
+        return;
+      }
+
+      staffOpinions.forEach(op => {
+        const card = document.createElement('div');
+        card.className = 'opinion-card';
+        
+        let statusClass = "tag-status";
+        if(op.status === "教職員回答待ち") statusClass += " waiting";
+        if(op.status === "回答済み（厚生部確認待ち）") statusClass += " ready";
+        if(op.status === "公開済み") statusClass += " published";
+
+        let replyPrefBadge = "";
+        let safeContent = op.content || "";
+        
+        if (safeContent.match(/【(?:回答|返答)の希望：希望しない/)) {
+          replyPrefBadge = `<span class="tag tag-reply-no">📢 返答不要（共有のみ）</span>`;
+        } else if (safeContent.match(/【(?:回答|返答)の希望：希望する/)) {
+          replyPrefBadge = `<span class="tag tag-reply-yes">✍️ 要返答</span>`;
+        }
+
+        let actionArea = "";
+        
+        if(op.status === "教職員回答待ち") {
+          actionArea = `
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed #cbd5e1;">
+              <strong>✏️ 回答を入力してください</strong>
+              <textarea id="reply-input-${op.id}" placeholder="学生への回答を記入してください...">${op.replyText || ""}</textarea>
+              <div style="margin-top: 12px; text-align: right;">
+                <button class="action-btn" onclick="submitReply(${op.id})">回答を保存して厚生部へ送信</button>
+              </div>
+            </div>
+          `;
+        } 
+        else if(op.status === "回答済み（厚生部確認待ち）") {
+          let timeHtml = op.replyDate ? `<div style="font-size: 0.8rem; color: #10b981; margin-bottom: 4px; font-weight: bold;">🕰 送信時刻: ${op.replyDate}</div>` : "";
+          actionArea = `
+            <div class="reply-box">
+              ${timeHtml}
+              <strong>送信済みの回答内容（厚生部確認中）:</strong><br>${op.replyText}
+            </div>
+            <div style="margin-top: 12px; display: flex; justify-content: flex-end; align-items: center;">
+              <p style="font-size:0.85rem; color:#64748b; margin-right: 16px;">※厚生部で内容を確認後、公開されます。</p>
+              <button class="cancel-btn" onclick="updateOpinion(${op.id}, {status: '教職員回答待ち'}, '厚生部への送信を取り消しますか？')">送信を取り消す（再編集）</button>
+            </div>
+          `;
+        } 
+        else if(op.status === "公開済み") {
+          let timeHtml = op.replyDate ? `<div style="font-size: 0.8rem; color: #059669; margin-bottom: 4px; font-weight: bold;">🕰 送信時刻: ${op.replyDate}</div>` : "";
+          actionArea = `
+            <div class="reply-box" style="background:#d1fae5; border-color:#a7f3d0;">
+              ${timeHtml}
+              <strong>現在公開中の回答:</strong><br>${op.replyText}
+            </div>
+            <div style="margin-top: 12px; text-align: right;">
+              <button class="alert-btn" onclick="requestUnpublish(${op.id})">厚生部へ公開停止・修正を依頼する</button>
+            </div>
+          `;
+        }
+
+        let displayContent = safeContent.replace(/【(?:回答|返答)の希望：.*?】\n\n/, '');
+        
+        let catTagClass = getCategoryTagClass(op.category);
+        let targetTagClass = (op.target && op.target.includes('学友会')) ? 'tag-gakuyukai' : 'tag-target';
+
+        card.innerHTML = `
+          <div>
+            ${replyPrefBadge}
+            <span class="tag ${targetTagClass}">宛先: ${op.target}</span>
+            <span class="tag ${catTagClass}">${op.category}</span>
+            <span class="tag ${statusClass}">${op.status}</span>
+          </div>
+          <div style="font-size: 0.85rem; color: #64748b; margin-top: 8px;">【学生からの意見】</div>
+          <div class="opinion-body">${displayContent}</div>
+          ${actionArea}
+        `;
+        listContainer.appendChild(card);
+      });
+    }
+
+    // =========================================================================
+    // 4. データ更新処理（GASへのPOST送信: action="update"）
+    // =========================================================================
+    
+    // ★回答やステータスの変更をスプレッドシートに上書き保存する共通関数
+    function updateOpinion(id, updates, confirmMessage = null) {
+      if (confirmMessage && !confirm(confirmMessage)) return;
+
+      const payload = {
+        action: "update",
+        id: id,
+        ...updates
+      };
+
+      // 画面を一時的に読み込み中にする
+      const listContainer = document.getElementById('staff-list');
+      listContainer.innerHTML = `<p style="text-align:center; color:#10b981; margin-top:40px;">⏳ スプレッドシートを更新中...</p>`;
+
+      fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(payload)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if(data.status === "success") {
+          fetchOpinionsAndRender(); // 更新成功したら再描画
+        } else {
+          alert("更新に失敗しました。\n" + data.message);
+          fetchOpinionsAndRender(); // 失敗しても画面を元に戻す
+        }
+      })
+      .catch(error => {
+        alert("通信エラーが発生しました。");
+        fetchOpinionsAndRender();
+      });
+    }
+
+    // 「回答を保存して厚生部へ送信」ボタンの処理
+    function submitReply(id) {
+      const reply = document.getElementById(`reply-input-${id}`).value;
+      if (!reply.trim()) {
+        alert("回答を入力してください。");
+        return;
+      }
+      const now = new Date().toLocaleString('ja-JP');
+      updateOpinion(id, {
+        status: '回答済み（厚生部確認待ち）',
+        replyText: reply,
+        replyDate: now
+      }, "この回答を厚生部へ送信しますか？");
+    }
+
+    // 「公開停止・修正を依頼する」ボタンの処理
+    function requestUnpublish(id) {
+      if(!confirm("【重要】この回答の公開を直ちに停止し、厚生部へ修正依頼を出しますか？")) return;
+      
+      let message = prompt("公開を停止する理由や、修正したい内容を記入してください（※必須）：");
+      if (!message) return; 
+      
+      let newReplyText = `【教職員から修正依頼（至急対応）】\n理由：${message}`;
+      
+      updateOpinion(id, {
+        status: '回答済み（厚生部確認待ち）',
+        replyText: newReplyText
+      }, null);
+    }
+
+    // ページ読み込み時にスプレッドシートからデータを取得して描画開始
+    fetchOpinionsAndRender();
+  </script>
+</body>
+</html>
